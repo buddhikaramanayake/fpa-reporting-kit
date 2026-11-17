@@ -1,0 +1,25 @@
+account,statement,section,sign
+Revenue - Direct-to-Consumer,IS,Revenue,credit
+Revenue - Wholesale,IS,Revenue,credit
+Cost of Goods Sold,IS,Cost of Sales,debit
+Fulfillment & Freight,IS,Cost of Sales,debit
+Salaries & Benefits,IS,Operating Expenses,debit
+Marketing & Advertising,IS,Operating Expenses,debit
+Rent & Occupancy,IS,Operating Expenses,debit
+Technology & Software,IS,Operating Expenses,debit
+Professional Fees,IS,Operating Expenses,debit
+Other G&A,IS,Operating Expenses,debit
+Depreciation & Amortization,IS,D&A,debit
+Interest Expense,IS,Financing,debit
+Income Tax,IS,Tax,debit
+Cash,BS,Assets,debit
+Accounts Receivable,BS,Assets,debit
+Inventory,BS,Assets,debit
+Prepaid Expenses,BS,Assets,debit
+PP&E (net),BS,Assets,debit
+Accounts Payable,BS,Liabilities,credit
+Accrued Liabilities,BS,Liabilities,credit
+Deferred Revenue,BS,Liabilities,credit
+Long-term Debt,BS,Liabilities,credit
+Share Capital,BS,Equity,credit
+Retained Earnings,BS,Equity,credit
