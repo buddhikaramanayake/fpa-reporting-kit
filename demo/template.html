@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FP&amp;A Reporting Workspace</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  color-scheme:light;
+  --page:#f9f9f7; --surface:#fcfcfb; --card:#ffffff; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:#e6e5df; --accent:#2a78d6; --accent-soft:#e8f1fc;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a;
+  --good:#006300; --bad:#c42f2f; --warn-bg:#fff6e0; --warn-ink:#7a5200; --good-bg:#e8f5e8; --bad-bg:#fdecec;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --page:#0d0d0d; --surface:#1a1a19; --card:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:#2c2c2a; --accent:#3987e5; --accent-soft:#1b2a3d;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70;
+    --good:#0ca30c; --bad:#e66767; --warn-bg:#3a2e10; --warn-ink:#f3cf7a; --good-bg:#132a13; --bad-bg:#3a1717;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --page:#0d0d0d; --surface:#1a1a19; --card:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:#2c2c2a; --accent:#3987e5; --accent-soft:#1b2a3d;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70;
+  --good:#0ca30c; --bad:#e66767; --warn-bg:#3a2e10; --warn-ink:#f3cf7a; --good-bg:#132a13; --bad-bg:#3a1717;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-variant-numeric:tabular-nums}
+header{padding:20px 24px 0;max-width:1280px;margin:0 auto}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+h1{font-size:20px;margin:0}
+.sub{color:var(--ink2);font-size:13px;margin-top:2px}
+.pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-weight:600;margin-left:6px;vertical-align:2px}
+.controls{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0 0;padding:12px;background:var(--card);border:1px solid var(--border);border-radius:10px}
+.controls label{display:flex;flex-direction:column;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;gap:3px}
+select,button{font:inherit;font-size:13px;color:var(--ink);background:var(--surface);border:1px solid var(--axis);border-radius:6px;padding:6px 8px}
+button{cursor:pointer}
+button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+nav{display:flex;gap:2px;margin-top:14px;border-bottom:1px solid var(--border);overflow-x:auto}
+nav button{border:none;background:none;border-bottom:2px solid transparent;border-radius:0;padding:10px 12px;color:var(--ink2);white-space:nowrap}
+nav button.active{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+main{max-width:1280px;margin:0 auto;padding:16px 24px 48px}
+.notice{background:var(--warn-bg);color:var(--warn-ink);padding:8px 12px;border-radius:8px;margin-bottom:12px;font-size:13px}
+.grid{display:grid;gap:14px}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+.two{grid-template-columns:repeat(auto-fit,minmax(380px,1fr))}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;min-width:0}
+.card h3{margin:0 0 2px;font-size:14px}
+.card .hint{color:var(--muted);font-size:12px;margin-bottom:10px}
+.kpi .lbl{color:var(--ink2);font-size:12px}
+.kpi .val{font-size:24px;font-weight:650;margin:4px 0}
+.kpi .cmp{font-size:12px;color:var(--ink2)}
+.fav{color:var(--good)} .unf{color:var(--bad)}
+.tag{font-size:11px;font-weight:600;padding:1px 6px;border-radius:4px;white-space:nowrap}
+.tag.fav{background:var(--good-bg)} .tag.unf{background:var(--bad-bg)}
+.tag.flag{background:var(--warn-bg);color:var(--warn-ink)}
+.chartbox{position:relative;height:280px}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}
+th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.03em}
+th:first-child,td:first-child{text-align:left}
+tr.sub td{font-weight:650;background:var(--surface)}
+tr.sec td{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em;padding-top:12px;border-bottom:none}
+td.ind{padding-left:20px}
+.ai{border-left:3px solid var(--accent);background:var(--accent-soft)}
+.ai h3{display:flex;gap:8px;align-items:center}
+.ai ul{margin:6px 0 0;padding-left:18px}
+.ai li{margin-bottom:8px}
+.ai .k{font-weight:600}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--ink2);margin-bottom:6px;flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.checks li{margin:4px 0}
+.ok{color:var(--good);font-weight:700}
+.fail{color:var(--bad);font-weight:700}
+textarea{width:100%;min-width:160px;font:inherit;font-size:12px;color:var(--ink);background:var(--surface);border:1px solid var(--axis);border-radius:6px;padding:4px}
+td.wrap{white-space:normal;text-align:left;min-width:220px;max-width:360px}
+footer{color:var(--muted);font-size:12px;max-width:1280px;margin:0 auto;padding:0 24px 32px}
+@media (max-width:600px){header,main,footer{padding-left:16px;padding-right:16px}.two{grid-template-columns:1fr}.kpi .val{font-size:20px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <div>
+      <h1><span id="co"></span> <span class="pill">Illustrative data</span></h1>
+      <div class="sub">FP&amp;A reporting workspace built with Claude · one set of controls drives all seven views</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button id="checksBtn" title="Validation checks"></button>
+      <button id="themeBtn" title="Toggle theme">Theme</button>
+    </div>
+  </div>
+  <div class="controls">
+    <label>Year<select id="year"></select></label>
+    <label>Month<select id="month"></select></label>
+    <label>Period<select id="period"><option>Month</option><option>QTD</option><option selected>YTD</option><option>Full year</option></select></label>
+    <label>Compare<select id="compare">
+      <option value="A|B">Actual vs Budget</option>
+      <option value="A|PY">Actual vs Prior Year</option>
+      <option value="LE|B">Latest Estimate vs Budget</option>
+      <option value="LE|PY">Latest Estimate vs Prior Year</option>
+    </select></label>
+  </div>
+  <nav id="tabs"></nav>
+</header>
+<main id="view"></main>
+<footer>Sample company and figures are fictional and illustrative. Commentary in this demo is drafted by transparent rules that mirror the kit's commentary template; review every number and explanation against your own source data and accounting policies.</footer>
+
+<script>
+const DATA = /*DATA*/null;
+const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const PL = DATA.plAccounts, BS = DATA.bsAccounts, LC = DATA.lastClosed;
+const REV = PL.slice(0,2), COS = PL.slice(2,4), OPEX = PL.slice(4,10);
+const idx = new Map();
+DATA.rows.forEach(([y,m,s,a,v]) => idx.set(`${y}|${m}|${s}|${a}`, v));
+const closed = (y,m) => y < LC.year || (y === LC.year && m <= LC.month);
+const SCN = {A:"Actual", B:"Budget", PY:"Prior Year", LE:"Latest Estimate"};
+const OWNER = {"Revenue - Direct-to-Consumer":"Head of E-commerce","Revenue - Wholesale":"Head of Wholesale Sales",
+ "Cost of Goods Sold":"Supply Chain Lead","Fulfillment & Freight":"Logistics Manager","Salaries & Benefits":"People & HR Lead",
+ "Marketing & Advertising":"Head of Marketing","Rent & Occupancy":"Financial Controller","Technology & Software":"IT Lead",
+ "Professional Fees":"Financial Controller","Other G&A":"Financial Controller","Depreciation & Amortization":"Financial Controller",
+ "Interest Expense":"Treasury / CFO","Income Tax":"Tax Manager"};
+const NEXT = {"Revenue - Direct-to-Consumer":"Split the gap into traffic, conversion and average order value by month; confirm whether the run-rate holds into peak season.",
+ "Revenue - Wholesale":"Confirm which accounts drove the upside, whether orders are recurring, and the receivables impact.",
+ "Cost of Goods Sold":"Reconcile product margin by SKU family against standard cost; check price/mix vs. purchase cost changes.",
+ "Fulfillment & Freight":"Pull carrier invoices for the spike months; separate rate change, surcharges and volume; test renegotiation options.",
+ "Salaries & Benefits":"Compare headcount plan to actual hires; confirm whether the underspend is timing (open roles) or permanent.",
+ "Marketing & Advertising":"Review paid-channel spend vs. return (ROAS/CAC) by month; agree a spend cap or reallocation with Marketing.",
+ "Technology & Software":"List new subscriptions since budget (e.g. systems projects) and confirm owners and renewal dates.",
+ "Professional Fees":"Identify the invoices behind the spike, classify one-off vs recurring, and confirm accrual timing.",
+ "Other G&A":"Review the top vendors in the variance; confirm coding is correct.", "Rent & Occupancy":"Confirm lease terms and any service charges.",
+ "Depreciation & Amortization":"Agree capex timing with the fixed asset register.","Interest Expense":"Check rate and debt schedule.","Income Tax":"Confirm the tax provision method with the Tax Manager."};
+
+const $ = s => document.querySelector(s);
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const st = {year:LC.year, month:LC.month, period:"YTD", compare:"A|B", tab:"Dashboard"};
+let charts = [];
+let actionState = {};
+
+// ---------- data access ----------
+function months(){
+  const m = st.month;
+  if (st.period === "Month") return [m];
+  if (st.period === "QTD") { const q = Math.floor((m-1)/3)*3+1; return Array.from({length:m-q+1},(_,i)=>q+i); }
+  if (st.period === "YTD") return Array.from({length:m},(_,i)=>i+1);
+  return Array.from({length:12},(_,i)=>i+1);
+}
+function val(y,m,scn,a){
+  let v;
+  if (scn === "A") v = closed(y,m) ? idx.get(`${y}|${m}|Actual|${a}`) : undefined;
+  else if (scn === "B") v = idx.get(`${y}|${m}|Budget|${a}`);
+  else if (scn === "PY") v = idx.get(`${y-1}|${m}|Actual|${a}`);
+  else if (scn === "LE") v = closed(y,m) ? idx.get(`${y}|${m}|Actual|${a}`) : idx.get(`${y}|${m}|Forecast|${a}`);
+  return v === undefined ? null : v;
+}
+function pl(y, ms, scn){
+  const o = {};
+  for (const a of PL){ let t = 0; for (const m of ms){ const v = val(y,m,scn,a); if (v === null) return null; t += v; } o[a] = t; }
+  o.Revenue = REV.reduce((s,a)=>s+o[a],0);
+  o["Cost of Sales"] = COS.reduce((s,a)=>s+o[a],0);
+  o["Gross Profit"] = o.Revenue - o["Cost of Sales"];
+  o["Operating Expenses"] = OPEX.reduce((s,a)=>s+o[a],0);
+  o.EBITDA = o["Gross Profit"] - o["Operating Expenses"];
+  o.EBIT = o.EBITDA - o["Depreciation & Amortization"];
+  o["Profit Before Tax"] = o.EBIT - o["Interest Expense"];
+  o["Net Income"] = o["Profit Before Tax"] - o["Income Tax"];
+  return o;
+}
+function bs(y,m,scn){
+  const o = {}; for (const a of BS){ const v = val(y,m,scn,a); if (v === null) return null; o[a] = v; }
+  o["Total Assets"] = BS.slice(0,5).reduce((s,a)=>s+o[a],0);
+  o["Total Liabilities"] = BS.slice(5,9).reduce((s,a)=>s+o[a],0);
+  o["Total Equity"] = BS.slice(9).reduce((s,a)=>s+o[a],0);
+  return o;
+}
+const isCredit = a => REV.includes(a) || ["Revenue","Gross Profit","EBITDA","EBIT","Profit Before Tax","Net Income"].includes(a);
+const impact = (a, p, c) => isCredit(a) ? p - c : c - p; // effect on profit: + favourable
+function scen(){ const [p,c] = st.compare.split("|"); return {p, c}; }
+function periodLabel(){
+  const ms = months(), y = st.year;
+  if (st.period === "Month") return `${MON[ms[0]-1]}-${y}`;
+  if (st.period === "Full year") return `FY${y}`;
+  return `${st.period} ${MON[ms[ms.length-1]-1]}-${y}`;
+}
+
+// ---------- formatting ----------
+const fmtK = v => v === null || v === undefined || isNaN(v) ? "—" : (v<0?"(":"") + "$" + Math.abs(Math.round(v/1000)).toLocaleString() + "K" + (v<0?")":"");
+const fmtM = v => v === null ? "—" : (v<0?"-":"") + "$" + (Math.abs(v)/1e6).toFixed(2) + "M";
+const pct = (v,d=1) => v === null || !isFinite(v) ? "—" : (v*100).toFixed(d) + "%";
+const sgnPct = v => v === null || !isFinite(v) ? "—" : (v>0?"+":"") + (v*100).toFixed(1) + "%";
+const bps = v => (v>0?"+":"") + Math.round(v*10000) + " bps";
+function favTag(imp, small){ if (imp === null || Math.abs(imp) < 1) return ""; return `<span class="tag ${imp>0?"fav":"unf"}">${imp>0?"▲ Fav":"▼ Unfav"}</span>`; }
+
+// ---------- commentary engine (rule-based stand-in for Claude's drafted commentary) ----------
+function drivers(y, ms, p, c){
+  const P = pl(y,ms,p), C = pl(y,ms,c); if (!P || !C) return [];
+  return PL.filter(a => a !== "Income Tax").map(a => {
+    const imp = impact(a, P[a], C[a]);
+    const vp = C[a] ? (P[a]-C[a])/Math.abs(C[a]) : 0;
+    // evidence: monthly pattern of variance
+    const series = ms.map(m => { const pv = val(y,m,p,a), cv = val(y,m,c,a); return cv ? (pv-cv)/Math.abs(cv) : 0; });
+    const startIdx = series.findIndex(x => Math.abs(x) > 0.03 && Math.sign(x) === Math.sign(vp));
+    return {a, P:P[a], C:C[a], diff:P[a]-C[a], imp, vp, material: Math.abs(imp) >= 50000 || (Math.abs(imp) >= 25000 && Math.abs(vp) >= 0.05),
+      from: startIdx >= 0 ? ms[startIdx] : null, series};
+  }).sort((x,z) => Math.abs(z.imp) - Math.abs(x.imp));
+}
+function commentLine(d, cName){
+  const dir = d.diff > 0 ? "above" : "below";
+  const big = d.series.map((x,i)=>[x,i]).filter(([x]) => Math.abs(x) > 0.5);
+  const fromI = d.from ? d.series.findIndex((x,i)=>Math.abs(x)>0.03 && Math.sign(x)===Math.sign(d.vp)) : -1;
+  const tail = fromI>=0 ? d.series.slice(fromI) : [], persist = tail.length>1 && tail.filter(x=>Math.abs(x)>0.03 && Math.sign(x)===Math.sign(d.vp)).length/tail.length >= 0.6;
+  const ev = big.length === 1 ? `Most of the gap sits in ${MON[months()[big[0][1]]-1]} alone, so check for a one-off item or accrual timing before treating it as a trend.` :
+    persist ? `The gap opens in ${MON[d.from-1]} and persists in the following months, so it looks like a run-rate change, not a one-off.` :
+    d.series.length === 1 ? `Single-month view: compare with the prior months before calling it a trend.` : `The gap is spread unevenly across the period with no single month driving it.`;
+  const oneOff = "";
+  return `<li><span class="k">${d.a}</span> is ${fmtK(Math.abs(d.diff))} (${sgnPct(d.vp)}) ${dir} ${cName} — ${d.imp>0?"favourable":"unfavourable"} to profit by ${fmtK(Math.abs(d.imp))}.
+    <br><span style="color:var(--ink2)">Evidence: ${ev}${oneOff}</span>
+    <br><span style="color:var(--ink2)">Next step (${OWNER[d.a]}): ${NEXT[d.a]}</span></li>`;
+}
+function aiCard(title, inner){ return `<div class="card ai"><h3>${title} <span class="pill">Draft commentary</span></h3><div class="hint">Difference → evidence → next step. Balances alone don't explain operating causes — confirm with the owner.</div>${inner}</div>`; }
+
+// ---------- charts ----------
+function destroyCharts(){ charts.forEach(c=>c.destroy()); charts = []; }
+function baseOpts(yFmt){
+  return {responsive:true, maintainAspectRatio:false, interaction:{mode:"index", intersect:false},
+    plugins:{legend:{display:false}, tooltip:{callbacks:{label:c => `${c.dataset.label}: ${yFmt(c.parsed.y)}`}}},
+    scales:{x:{grid:{display:false}, ticks:{color:css("--muted")}, border:{color:css("--axis")}},
+            y:{grid:{color:css("--grid")}, ticks:{color:css("--muted"), callback:v=>yFmt(v)}, border:{display:false}}}};
+}
+function legend(items){ return `<div class="legend">${items.map(([n,c,dash])=>`<span><i style="background:${dash?"transparent":c};${dash?`border:2px dashed ${c};`:""}"></i>${n}</span>`).join("")}</div>`; }
+function lineDS(label, data, color, dash){ return {label, data, borderColor:color, backgroundColor:color, borderWidth:2, pointRadius:3, pointHoverRadius:5, borderDash:dash?[5,4]:[], spanGaps:false, tension:0.25}; }
+function mk(id, cfg){ const el = document.getElementById(id); if (el) charts.push(new Chart(el, cfg)); }
+
+// ---------- views ----------
+const VIEWS = ["Dashboard","Income Statement","Balance Sheet","Margins","Budget Variance","Forecast","Action Plan"];
+
+function notice(){
+  const {p} = scen();
+  if (p === "A" && months().some(m => !closed(st.year,m)))
+    return `<div class="notice">Actuals are closed through ${MON[LC.month-1]}-${LC.year}. The selected period includes open months, so Actual figures show “—”. Switch Compare to <b>Latest Estimate</b> (Actual + Forecast) or pick an earlier month. <button onclick="setCompare('LE|B')">Use Latest Estimate vs Budget</button></div>`;
+  if (st.year === 2025 && st.compare.endsWith("|B")) return `<div class="notice">No budget is loaded for 2025 in this sample. Compare against Prior Year or select 2026.</div>`;
+  if (st.year === 2025 && st.compare.endsWith("|PY")) return `<div class="notice">No 2024 data is loaded in this sample, so prior-year comparisons for 2025 are blank.</div>`;
+  return "";
+}
+window.setCompare = v => { st.compare = v; $("#compare").value = v; render(); };
+
+function vDashboard(){
+  const {p,c} = scen(), ms = months(), y = st.year;
+  const P = pl(y,ms,p), C = pl(y,ms,c), endM = ms[ms.length-1];
+  const Pb = bs(y,endM,p), Cb = bs(y,endM,c);
+  const k = (lbl, pv, cv, f, credit=true, isPct=false) => {
+    let cmp = "—";
+    if (pv !== null && cv !== null){
+      const d = pv - cv, imp = credit ? d : -d;
+      cmp = isPct ? `${bps(d)} vs ${SCN[c]} ${favTag(imp*1e6)}` : `${d>=0?"+":"−"}${fmtK(Math.abs(d))} (${sgnPct(cv?d/Math.abs(cv):null)}) vs ${SCN[c]} ${favTag(imp)}`;
+    }
+    return `<div class="card kpi"><div class="lbl">${lbl}</div><div class="val">${pv===null?"—":f(pv)}</div><div class="cmp">${cmp}</div></div>`;
+  };
+  const gm = o => o ? o["Gross Profit"]/o.Revenue : null;
+  let h = notice() + `<div class="grid kpis">
+    ${k("Revenue · "+periodLabel(), P&&P.Revenue, C&&C.Revenue, fmtM)}
+    ${k("Gross margin", gm(P), gm(C), v=>pct(v), true, true)}
+    ${k("EBITDA", P&&P.EBITDA, C&&C.EBITDA, fmtM)}
+    ${k("Net income", P&&P["Net Income"], C&&C["Net Income"], fmtM)}
+    ${k(`Closing cash · ${MON[endM-1]}-${y}`, Pb&&Pb.Cash, Cb&&Cb.Cash, fmtM)}
+  </div>
+  <div class="grid two" style="margin-top:14px">
+    <div class="card"><h3>Monthly revenue · ${y}</h3><div class="hint">Actual through ${MON[LC.month-1]}, forecast for open months, budget for reference</div>
+      ${legend([["Actual",css("--s1")],["Budget",css("--s2")],["Forecast",css("--s3"),true]])}<div class="chartbox"><canvas id="c1" aria-label="Monthly revenue chart"></canvas></div></div>
+    <div class="card"><h3>Monthly EBITDA · ${y}</h3><div class="hint">${SCN[p]} vs ${SCN[c]}</div>
+      ${legend([[SCN[p],css("--s1")],[SCN[c],css("--s2")]])}<div class="chartbox"><canvas id="c2" aria-label="Monthly EBITDA chart"></canvas></div></div>
+  </div>`;
+  const dr = drivers(y,ms,p,c).slice(0,3);
+  h += `<div style="margin-top:14px">${aiCard("What moved profit · "+periodLabel(), dr.length ? `<ul>${dr.map(d=>commentLine(d,SCN[c])).join("")}</ul>` : `<p>No comparison available for this selection.</p>`)}</div>`;
+  $("#view").innerHTML = h;
+  const all = [...Array(12).keys()].map(i=>i+1), rev = (s,m) => { const o = pl(y,[m],s); return o ? o.Revenue : null; };
+  mk("c1",{type:"line", data:{labels:MON, datasets:[
+    lineDS("Actual", all.map(m=>rev("A",m)), css("--s1")),
+    lineDS("Budget", all.map(m=>rev("B",m)), css("--s2")),
+    lineDS("Forecast", all.map(m=>closed(y,m) && !closed(y,m+1) ? rev("A",m) : (closed(y,m)?null:idx.get(`${y}|${m}|Forecast|${PL[0]}`)!==undefined?rev("LE",m):null)), css("--s3"), true)]}, options:baseOpts(fmtK)});
+  const eb = (s,m) => { const o = pl(y,[m],s); return o ? o.EBITDA : null; };
+  mk("c2",{type:"bar", data:{labels:MON, datasets:[
+    {label:SCN[p], data:all.map(m=>eb(p,m)), backgroundColor:css("--s1"), borderRadius:4, borderSkipped:"start", maxBarThickness:18},
+    {label:SCN[c], data:all.map(m=>eb(c,m)), backgroundColor:css("--s2"), borderRadius:4, borderSkipped:"start", maxBarThickness:18}]}, options:baseOpts(fmtK)});
+}
+
+function vIncome(){
+  const {p,c} = scen(), ms = months(), y = st.year, P = pl(y,ms,p), C = pl(y,ms,c);
+  const row = (a, cls="", ind=false) => {
+    const pv = P?P[a]:null, cv = C?C[a]:null, d = pv!==null&&cv!==null ? pv-cv : null;
+    const imp = d===null?null:impact(a,pv,cv);
+    return `<tr class="${cls}"><td class="${ind?"ind":""}">${a}</td><td>${fmtK(pv)}</td><td>${fmtK(cv)}</td><td>${fmtK(d)}</td><td>${d===null||!cv?"—":sgnPct(d/Math.abs(cv))}</td><td>${P&&P.Revenue?pct(pv/P.Revenue):"—"}</td><td>${favTag(imp)}</td></tr>`;
+  };
+  const sec = t => `<tr class="sec"><td colspan="7">${t}</td></tr>`;
+  $("#view").innerHTML = notice() + `<div class="card"><h3>Income statement · ${periodLabel()}</h3>
+   <div class="hint">Revenue and expenses belong to a period. Variance = ${SCN[p]} − ${SCN[c]}. For cost lines a positive variance is <b>unfavourable</b>; the last column shows the effect on profit.</div>
+   <div class="tablewrap"><table><thead><tr><th>Line</th><th>${SCN[p]}</th><th>${SCN[c]}</th><th>Var $</th><th>Var %</th><th>% of rev</th><th>Profit impact</th></tr></thead><tbody>
+   ${sec("Revenue")}${REV.map(a=>row(a,"",true)).join("")}${row("Revenue","sub")}
+   ${sec("Cost of sales")}${COS.map(a=>row(a,"",true)).join("")}${row("Gross Profit","sub")}
+   ${sec("Operating expenses")}${OPEX.map(a=>row(a,"",true)).join("")}${row("Operating Expenses","sub")}${row("EBITDA","sub")}
+   ${row("Depreciation & Amortization","",true)}${row("EBIT","sub")}${row("Interest Expense","",true)}${row("Profit Before Tax","sub")}${row("Income Tax","",true)}${row("Net Income","sub")}
+   </tbody></table></div></div>`;
+}
+
+function vBalance(){
+  const {p,c} = scen(), y = st.year, m = months().slice(-1)[0];
+  const cScn = c === "B" ? "B" : "PY";
+  const P = bs(y,m,p), C = bs(y,m,cScn);
+  const P1 = pl(y,[m],p), C1 = pl(y,[m],cScn);
+  const row = (a,cls="",ind=false) => { const pv=P?P[a]:null, cv=C?C[a]:null; return `<tr class="${cls}"><td class="${ind?"ind":""}">${a}</td><td>${fmtK(pv)}</td><td>${fmtK(cv)}</td><td>${pv!==null&&cv!==null?fmtK(pv-cv):"—"}</td></tr>`; };
+  const sec = t => `<tr class="sec"><td colspan="4">${t}</td></tr>`;
+  const ratios = (B, L) => B && L ? {
+    "Current ratio": (B.Cash+B["Accounts Receivable"]+B.Inventory+B["Prepaid Expenses"])/(B["Accounts Payable"]+B["Accrued Liabilities"]+B["Deferred Revenue"]),
+    "DSO (days)": B["Accounts Receivable"]/(L.Revenue)*30,
+    "Inventory days": B.Inventory/L["Cost of Goods Sold"]*30,
+    "Net cash / (debt)": B.Cash - B["Long-term Debt"]} : null;
+  const rP = ratios(P,P1), rC = ratios(C,C1);
+  const chk = P ? P["Total Assets"] - P["Total Liabilities"] - P["Total Equity"] : null;
+  const rf = (k,v) => v===null||v===undefined?"—":k.startsWith("Net")?fmtK(v):k.startsWith("Current")?v.toFixed(2)+"x":Math.round(v);
+  $("#view").innerHTML = notice() + `<div class="grid two">
+   <div class="card"><h3>Balance sheet · closing ${MON[m-1]}-${y}</h3><div class="hint">Balances belong to a closing date, not a period: the Period control is ignored here; the last month of the selection is used. Comparison: ${SCN[cScn]} at the same date.</div>
+   <div class="tablewrap"><table><thead><tr><th>Account</th><th>${SCN[p]}</th><th>${SCN[cScn]}</th><th>Change</th></tr></thead><tbody>
+   ${sec("Assets")}${BS.slice(0,5).map(a=>row(a,"",true)).join("")}${row("Total Assets","sub")}
+   ${sec("Liabilities")}${BS.slice(5,9).map(a=>row(a,"",true)).join("")}${row("Total Liabilities","sub")}
+   ${sec("Equity")}${BS.slice(9).map(a=>row(a,"",true)).join("")}${row("Total Equity","sub")}
+   </tbody></table></div>
+   <p style="font-size:12px;margin:10px 0 0">Balance check (Assets − Liabilities − Equity): ${chk===null?"—":Math.abs(chk)<1?'<span class="ok">✓ 0</span>':`<span class="fail">✗ ${fmtK(chk)}</span>`}</p></div>
+   <div class="card"><h3>Working capital & liquidity</h3><div class="hint">Day metrics use the closing month's flow × 30. Directional only.</div>
+   <div class="tablewrap"><table><thead><tr><th>Metric</th><th>${SCN[p]}</th><th>${SCN[cScn]}</th></tr></thead><tbody>
+   ${rP||rC?Object.keys(rP||rC).map(k=>`<tr><td>${k}</td><td>${rf(k,rP&&rP[k])}</td><td>${rf(k,rC&&rC[k])}</td></tr>`).join(""):""}
+   </tbody></table></div>
+   ${P&&C?`<div style="margin-top:14px">${aiCard("Balance sheet read", `<ul>
+     <li><span class="k">Inventory</span> is ${fmtK(Math.abs(P.Inventory-C.Inventory))} ${P.Inventory>=C.Inventory?"above":"below"} ${SCN[cScn]} (${rf("Inventory days",rP["Inventory days"])} vs ${rf("Inventory days",rC["Inventory days"])} days). <br><span style="color:var(--ink2)">Evidence needed: stock ageing and purchase orders — a balance alone does not show whether this is planned peak-season build or slow-moving stock. Owner: Supply Chain Lead.</span></li>
+     <li><span class="k">Cash</span> is ${fmtK(Math.abs(P.Cash-C.Cash))} ${P.Cash>=C.Cash?"above":"below"} ${SCN[cScn]}. <br><span style="color:var(--ink2)">Link it to lower profit year to date and the inventory change before drawing conclusions; build a cash bridge if the gap matters for covenants. Owner: Treasury / CFO.</span></li></ul>`)}</div>`:""}
+   </div></div>`;
+}
+
+function vMargins(){
+  const {p,c} = scen(), ms = months(), y = st.year, P = pl(y,ms,p), C = pl(y,ms,c);
+  const defs = [["Gross margin","Gross Profit"],["Opex % of revenue","Operating Expenses"],["EBITDA margin","EBITDA"],["Net margin","Net Income"]];
+  const r = (o,k) => o ? o[k]/o.Revenue : null;
+  const rows = defs.map(([n,k]) => { const pv=r(P,k), cv=r(C,k); const d = pv!==null&&cv!==null?pv-cv:null; const good = d===null?null:(k==="Operating Expenses"?-d:d);
+    return `<tr><td>${n}</td><td>${pct(pv)}</td><td>${pct(cv)}</td><td>${d===null?"—":bps(d)}</td><td>${favTag(good===null?null:good*1e6)}</td></tr>`; }).join("");
+  $("#view").innerHTML = notice() + `<div class="card"><h3>Margins · ${periodLabel()}</h3><div class="hint">Margins are calculated from the selected profit and revenue <b>totals</b> — never by averaging monthly percentages.</div>
+   <div class="tablewrap"><table><thead><tr><th>Measure</th><th>${SCN[p]}</th><th>${SCN[c]}</th><th>Change</th><th></th></tr></thead><tbody>${rows}</tbody></table></div></div>
+   <div class="grid two" style="margin-top:14px">
+    <div class="card"><h3>Gross margin by month · ${y}</h3>${legend([[SCN[p],css("--s1")],[SCN[c],css("--s2")]])}<div class="chartbox"><canvas id="m1"></canvas></div></div>
+    <div class="card"><h3>EBITDA margin by month · ${y}</h3>${legend([[SCN[p],css("--s1")],[SCN[c],css("--s2")]])}<div class="chartbox"><canvas id="m2"></canvas></div></div>
+   </div>
+   <div style="margin-top:14px">${aiCard("Margin read", (() => { if(!P||!C) return "<p>No comparison available.</p>";
+     const fr = (o)=>o["Fulfillment & Freight"]/o.Revenue, mk_=(o)=>o["Marketing & Advertising"]/o.Revenue, cg=(o)=>o["Cost of Goods Sold"]/o.Revenue;
+     return `<ul><li><span class="k">Gross margin</span> moved ${bps(r(P,"Gross Profit")-r(C,"Gross Profit"))}: product cost ${bps(-(cg(P)-cg(C)))} and freight ${bps(-(fr(P)-fr(C)))} of that. <br><span style="color:var(--ink2)">Next step: split freight into rate, surcharge and volume using carrier invoices (Logistics Manager).</span></li>
+     <li><span class="k">Marketing</span> is ${pct(mk_(P))} of revenue vs ${pct(mk_(C))}. <br><span style="color:var(--ink2)">Next step: test whether extra spend bought revenue — compare paid spend to DTC orders by month (Head of Marketing).</span></li></ul>`; })())}</div>`;
+  const all=[...Array(12).keys()].map(i=>i+1), mg=(s,m,k)=>{const o=pl(y,[m],s);return o?o[k]/o.Revenue:null;};
+  const o = baseOpts(v=>pct(v,1));
+  mk("m1",{type:"line",data:{labels:MON,datasets:[lineDS(SCN[p],all.map(m=>mg(p,m,"Gross Profit")),css("--s1")),lineDS(SCN[c],all.map(m=>mg(c,m,"Gross Profit")),css("--s2"))]},options:o});
+  mk("m2",{type:"line",data:{labels:MON,datasets:[lineDS(SCN[p],all.map(m=>mg(p,m,"EBITDA")),css("--s1")),lineDS(SCN[c],all.map(m=>mg(c,m,"EBITDA")),css("--s2"))]},options:baseOpts(v=>pct(v,1))});
+}
+
+function vVariance(){
+  const {p,c} = scen(), ms = months(), y = st.year, P = pl(y,ms,p), C = pl(y,ms,c);
+  if (!P || !C){ $("#view").innerHTML = notice() + `<div class="card">No comparison available for this selection.</div>`; return; }
+  const dr = drivers(y,ms,p,c).filter(d => !["Depreciation & Amortization","Interest Expense"].includes(d.a));
+  const ebDr = dr.filter(d => PL.indexOf(d.a) < 10);
+  $("#view").innerHTML = notice() + `<div class="card"><h3>EBITDA bridge · ${SCN[c]} → ${SCN[p]} · ${periodLabel()}</h3><div class="hint">Each bar is a line's effect on profit. Green raises EBITDA, red lowers it.</div>
+    ${legend([["Start / end",css("--s1")],["Favourable",css("--good")],["Unfavourable",css("--bad")]])}<div class="chartbox" style="height:320px"><canvas id="w1"></canvas></div></div>
+    <div class="card" style="margin-top:14px"><h3>Variance table · sorted by profit impact</h3><div class="hint">Material = |impact| ≥ $50K, <b>or</b> |impact| ≥ $25K and |variance| ≥ 5%. Thresholds are a reporting policy — set yours in the definitions template.</div>
+    <div class="tablewrap"><table><thead><tr><th>Line</th><th>${SCN[p]}</th><th>${SCN[c]}</th><th>Var $</th><th>Var %</th><th>Profit impact</th><th>Material</th></tr></thead><tbody>
+    ${dr.map(d=>`<tr><td>${d.a}</td><td>${fmtK(d.P)}</td><td>${fmtK(d.C)}</td><td>${fmtK(d.diff)}</td><td>${sgnPct(d.vp)}</td><td class="${d.imp>0?"fav":"unf"}">${Math.abs(d.imp)<500?"":d.imp>0?"+":"−"}${fmtK(Math.abs(d.imp))}</td><td>${d.material?'<span class="tag flag">Explain</span>':""}</td></tr>`).join("")}
+    </tbody></table></div></div>
+    <div style="margin-top:14px">${aiCard("Material variances to explain", `<ul>${dr.filter(d=>d.material).map(d=>commentLine(d,SCN[c])).join("") || "<li>No line breaches the materiality threshold.</li>"}</ul>`)}</div>`;
+  // waterfall
+  const labels = [`${SCN[c]} EBITDA`], data = [[0,C.EBITDA]], colors=[css("--s1")]; let run = C.EBITDA;
+  ebDr.forEach(d => { labels.push(d.a.replace("Revenue - ","Rev: ")); data.push([run, run + d.imp]); colors.push(d.imp>=0?css("--good"):css("--bad")); run += d.imp; });
+  labels.push(`${SCN[p]} EBITDA`); data.push([0,P.EBITDA]); colors.push(css("--s1"));
+  const o = baseOpts(fmtK); o.interaction = {mode:"nearest", intersect:true};
+  o.plugins.tooltip.callbacks.label = ctx => { const [a,b] = ctx.raw; const i = ctx.dataIndex; return (i===0||i===labels.length-1) ? fmtK(b) : `${b-a>=0?"+":"−"}${fmtK(Math.abs(b-a))}`; };
+  o.scales.x.ticks.autoSkip = false; o.scales.x.ticks.maxRotation = 50; o.scales.x.ticks.minRotation = 30;
+  o.scales.y.beginAtZero = false;
+  mk("w1",{type:"bar", data:{labels, datasets:[{data, backgroundColor:colors, borderRadius:4, borderSkipped:false, maxBarThickness:36}]}, options:o});
+}
+
+function forecastFlags(y){
+  if (y !== LC.year) return [];
+  const last3 = [LC.month-2, LC.month-1, LC.month], open = []; for (let m=LC.month+1;m<=12;m++) open.push(m);
+  if (!open.length) return [];
+  return PL.filter(a=>!["Income Tax","Depreciation & Amortization","Interest Expense","Rent & Occupancy","Other G&A"].includes(a)).map(a => {
+    const ratio = (ms,s) => { const n = ms.reduce((t,m)=>t+val(y,m,s,a),0), d = ms.reduce((t,m)=>t+val(y,m,"B",a),0); return d ? n/d-1 : 0; };
+    const med = last3.map(m=>ratio([m],"A")).sort((x,z)=>x-z)[1]; // median month resists one-offs
+    const runRate = med, fc = ratio(open,"LE");
+    return {a, runRate, fc, gap: fc - runRate};
+  }).filter(f => Math.abs(f.gap) >= 0.02 && (isCredit(f.a) ? f.gap > 0 : f.gap < 0)).sort((x,z)=>Math.abs(z.gap)-Math.abs(x.gap));
+}
+
+function vForecast(){
+  const y = st.year, FY = [...Array(12).keys()].map(i=>i+1), cl = FY.filter(m=>closed(y,m)), op = FY.filter(m=>!closed(y,m));
+  if (y !== LC.year){ $("#view").innerHTML = `<div class="notice">The forecast view applies to the current year (${LC.year}). ${y} is fully closed.</div>`; return; }
+  const B = pl(y,FY,"B"), A = pl(y,cl,"A"), F = pl(y,op,"LE"), LE = pl(y,FY,"LE"), PY = pl(y,FY,"PY");
+  const lines = ["Revenue","Gross Profit","Operating Expenses","EBITDA","Net Income"];
+  const flags = forecastFlags(y);
+  $("#view").innerHTML = `<div class="card"><h3>Full-year ${y} outlook · Latest Estimate = Actual (Jan–${MON[LC.month-1]}) + Forecast (${MON[op[0]-1]}–Dec)</h3>
+   <div class="hint">The forecast only replaces months that are not closed. Closed actuals are never overwritten.</div>
+   <div class="tablewrap"><table><thead><tr><th>Line</th><th>Actual YTD</th><th>Forecast rest</th><th>Latest Estimate</th><th>Budget</th><th>LE vs Budget</th><th>Prior year</th><th>LE vs PY</th></tr></thead><tbody>
+   ${lines.map(k=>{ const d=LE[k]-B[k], dp=LE[k]-PY[k]; const sub=k==="Operating Expenses"; return `<tr><td>${k}</td><td>${fmtK(A[k])}</td><td>${fmtK(F[k])}</td><td><b>${fmtK(LE[k])}</b></td><td>${fmtK(B[k])}</td><td class="${(sub?-d:d)>0?"fav":"unf"}">${fmtK(d)} (${sgnPct(d/Math.abs(B[k]))})</td><td>${fmtK(PY[k])}</td><td>${sgnPct(dp/Math.abs(PY[k]))}</td></tr>`;}).join("")}
+   </tbody></table></div>
+   <p style="font-size:12px;margin:8px 0 0">Tie-out: Actual YTD + Forecast = Latest Estimate ${Math.abs(A.Revenue+F.Revenue-LE.Revenue)<1?'<span class="ok">✓</span>':'<span class="fail">✗</span>'}</p></div>
+   <div class="grid two" style="margin-top:14px">
+    <div class="card"><h3>Revenue path · ${y}</h3>${legend([["Actual",css("--s1")],["Forecast",css("--s3"),true],["Budget",css("--s2")]])}<div class="chartbox"><canvas id="f1"></canvas></div></div>
+    ${aiCard("Forecast assumptions to challenge", flags.length ? `<ul>${flags.map(f=>`<li><span class="k">${f.a}</span>: forecast assumes ${sgnPct(f.fc)} vs budget for ${MON[op[0]-1]}–Dec, but the median of the last three closed months ran at ${sgnPct(f.runRate)}. <br><span style="color:var(--ink2)">The forecast is more optimistic than recent actuals by ${(Math.abs(f.gap)*100).toFixed(1)} pts. Ask ${OWNER[f.a]} what changes in the open months, or reset to run-rate.</span></li>`).join("")}</ul>` : "<p>Forecast assumptions are in line with the latest run-rate.</p>")}
+   </div>`;
+  const rev=(s,m)=>{const o=pl(y,[m],s);return o?o.Revenue:null;};
+  mk("f1",{type:"line",data:{labels:MON,datasets:[
+    lineDS("Actual",FY.map(m=>closed(y,m)?rev("A",m):null),css("--s1")),
+    lineDS("Forecast",FY.map(m=>m>=LC.month?rev("LE",m):null),css("--s3"),true),
+    lineDS("Budget",FY.map(m=>rev("B",m)),css("--s2"))]},options:baseOpts(fmtK)});
+}
+
+function actions(){
+  const {p,c} = scen(), y = st.year, ms = months();
+  const nm = LC.month === 12 ? 1 : LC.month + 1, ny = LC.month === 12 ? LC.year + 1 : LC.year;
+  const due = `${ny}-${String(nm).padStart(2,'0')}-25`; // next monthly review
+  const list = drivers(y,ms,p,c).filter(d=>d.material && d.imp<0).map(d=>({id:"v:"+d.a, area:d.a, issue:`${d.a} ${fmtK(Math.abs(d.imp))} unfavourable vs ${SCN[c]} (${periodLabel()})`, step:NEXT[d.a], owner:OWNER[d.a], due}));
+  forecastFlags(y).forEach(f=>list.push({id:"f:"+f.a, area:f.a, issue:`Forecast for ${f.a} is ${(Math.abs(f.gap)*100).toFixed(1)} pts more optimistic than the last 3 months`, step:"Confirm the driver for the change or reset the forecast to run-rate before the next forecast cycle.", owner:OWNER[f.a], due}));
+  const P = bs(y, ms.slice(-1)[0], "LE"), C = bs(y, ms.slice(-1)[0], "B");
+  if (P && C && P.Inventory > C.Inventory*1.1) list.push({id:"b:inv", area:"Inventory", issue:`Inventory ${fmtK(P.Inventory-C.Inventory)} above budget at ${MON[ms.slice(-1)[0]-1]}-${y}`, step:"Review stock ageing and open purchase orders; agree a target for year-end inventory.", owner:"Supply Chain Lead", due});
+  return list;
+}
+function vActions(){
+  const list = actions();
+  $("#view").innerHTML = notice() + `<div class="card"><h3>Action plan · generated from material unfavourable variances and forecast flags</h3>
+   <div class="hint">Every item needs an owner and a date before the next review meeting. Edit status and notes here (kept in this browser tab only), then export.</div>
+   <div class="tablewrap"><table><thead><tr><th>Issue</th><th style="text-align:left">Proposed next step</th><th style="text-align:left">Owner</th><th>Due</th><th>Status</th><th style="text-align:left">Notes</th></tr></thead><tbody>
+   ${list.map(x=>{ const s = actionState[x.id]||{status:"Open",note:""}; return `<tr><td class="wrap">${x.issue}</td><td class="wrap">${x.step}</td><td style="text-align:left">${x.owner}</td><td>${x.due}</td>
+     <td><select data-id="${x.id}" class="st">${["Open","In progress","Done"].map(o=>`<option ${o===s.status?"selected":""}>${o}</option>`).join("")}</select></td>
+     <td><textarea data-id="${x.id}" class="nt" rows="2" placeholder="Evidence / decision">${s.note}</textarea></td></tr>`; }).join("") || `<tr><td colspan="6">No material unfavourable items for this selection.</td></tr>`}
+   </tbody></table></div>
+   <div style="margin-top:12px"><button class="primary" id="exp">Export action plan (CSV)</button></div></div>`;
+  document.querySelectorAll(".st").forEach(e=>e.onchange=()=>{ actionState[e.dataset.id]={...(actionState[e.dataset.id]||{note:""}), status:e.value}; });
+  document.querySelectorAll(".nt").forEach(e=>e.oninput=()=>{ actionState[e.dataset.id]={...(actionState[e.dataset.id]||{status:"Open"}), note:e.value}; });
+  $("#exp").onclick = () => {
+    const q = s => `"${String(s).replace(/"/g,'""')}"`;
+    const csv = [["Issue","Next step","Owner","Due","Status","Notes"].join(",")].concat(list.map(x=>{const s=actionState[x.id]||{status:"Open",note:""};return [x.issue,x.step,x.owner,x.due,s.status,s.note].map(q).join(",");})).join("\n");
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv],{type:"text/csv"})); a.download = "action_plan.csv"; a.click();
+  };
+}
+
+// ---------- validation checks ----------
+function runChecks(){
+  const res = []; let bal = true, re = true;
+  const ys = [...new Set(DATA.rows.map(r=>r[0]))];
+  for (const y of ys) for (let m=1;m<=12;m++) for (const s of ["A","B","LE"]) {
+    const b = bs(y,m,s); if (b && Math.abs(b["Total Assets"]-b["Total Liabilities"]-b["Total Equity"])>1) bal=false;
+    const b0 = m>1 ? bs(y,m-1,s) : null, p = pl(y,[m],s);
+    if (b && b0 && p && Math.abs(b["Retained Earnings"]-b0["Retained Earnings"]-p["Net Income"])>1) re=false;
+  }
+  res.push(["Balance sheet balances for every month and scenario", bal]);
+  res.push(["Retained earnings roll forward = prior balance + net income", re]);
+  const y = LC.year, FY=[...Array(12).keys()].map(i=>i+1);
+  const le = pl(y,FY,"LE"), a = pl(y,FY.filter(m=>closed(y,m)),"A"), f = pl(y,FY.filter(m=>!closed(y,m)),"LE");
+  res.push(["Latest Estimate = closed actuals + forecast for open months", Math.abs(le.Revenue - a.Revenue - f.Revenue) < 1]);
+  const t = pl(y,[1,2,3],"A"); res.push(["Income statement subtotals tie (Revenue − all costs = Net income)", Math.abs(t.Revenue - PL.slice(2).reduce((s,k)=>s+t[k],0) - t["Net Income"]) < 1]);
+  return res;
+}
+function showChecks(){
+  const r = runChecks();
+  destroyCharts();
+  $("#view").innerHTML = `<div class="card"><h3>Validation checks</h3><div class="hint">Run on load against the full dataset. A failing check should stop the report from being circulated.</div>
+  <ul class="checks">${r.map(([n,ok])=>`<li><span class="${ok?"ok":"fail"}">${ok?"✓":"✗"}</span> ${n}</li>`).join("")}</ul>
+  <h3 style="margin-top:16px">Known gaps (kept visible on purpose)</h3><ul class="checks">
+  <li>Tax is a simplified 25% of monthly profit before tax — not a tax provision.</li>
+  <li>Cash is the balancing figure in the sample balance sheet; there is no cash flow statement yet.</li>
+  <li>Working-capital day metrics use one month of flow and are directional only.</li>
+  <li>Commentary is rule-generated in this demo; owners must confirm causes.</li></ul></div>`;
+  document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
+}
+
+// ---------- shell ----------
+function render(){
+  destroyCharts();
+  ({"Dashboard":vDashboard,"Income Statement":vIncome,"Balance Sheet":vBalance,"Margins":vMargins,"Budget Variance":vVariance,"Forecast":vForecast,"Action Plan":vActions})[st.tab]();
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active", b.textContent===st.tab));
+}
+function init(){
+  $("#co").textContent = DATA.company;
+  const ys = [...new Set(DATA.rows.map(r=>r[0]))].sort();
+  $("#year").innerHTML = ys.map(y=>`<option ${y===st.year?"selected":""}>${y}</option>`).join("");
+  $("#month").innerHTML = MON.map((m,i)=>`<option value="${i+1}" ${i+1===st.month?"selected":""}>${m}</option>`).join("");
+  $("#tabs").innerHTML = VIEWS.map(v=>`<button>${v}</button>`).join("");
+  document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{ st.tab=b.textContent; render(); });
+  $("#year").onchange = e => { st.year=+e.target.value; render(); };
+  $("#month").onchange = e => { st.month=+e.target.value; render(); };
+  $("#period").onchange = e => { st.period=e.target.value; render(); };
+  $("#compare").onchange = e => { st.compare=e.target.value; render(); };
+  const r = runChecks(), ok = r.filter(x=>x[1]).length;
+  $("#checksBtn").innerHTML = `Checks <span class="${ok===r.length?"ok":"fail"}">${ok}/${r.length} ${ok===r.length?"✓":"✗"}</span>`;
+  $("#checksBtn").onclick = showChecks;
+  $("#themeBtn").onclick = () => { const d = document.documentElement; const dark = d.dataset.theme ? d.dataset.theme==="dark" : matchMedia("(prefers-color-scheme: dark)").matches; d.dataset.theme = dark?"light":"dark"; render(); };
+  Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+  render();
+}
+init();
+</script>
+</body>
+</html>
